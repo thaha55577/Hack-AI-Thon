@@ -35,6 +35,8 @@ const RegistrationForm = () => {
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
 
   const [isTransforming, setIsTransforming] = useState(false);
+  // New state for Screenshot Warning
+  const [showWarning, setShowWarning] = useState(false);
 
   // New states for Rules and Registration Check
   const [showRules, setShowRules] = useState(true);
@@ -319,8 +321,9 @@ const RegistrationForm = () => {
       return;
     }
 
+    // Modified Logic: Show Warning Popup instead of Toast
     if (!paymentScreenshot) {
-      toast.error('Please upload the payment screenshot');
+      setShowWarning(true);
       return;
     }
 
@@ -432,113 +435,159 @@ const RegistrationForm = () => {
     }
   };
 
+
+
+  /* Helper to render member fields */
   const renderMemberFields = (
     member: Member,
     setter: React.Dispatch<React.SetStateAction<Member>>,
     label: string
   ) => (
-    <div className="mb-6 sub-card">
-      <h3 className="text-cyan-300 font-semibold mb-3" style={{ fontFamily: 'Orbitron' }}>
+    <div className="mb-8 sub-card p-6 bg-black/40 border border-cyan-500/20 rounded-lg">
+      <h3 className="text-cyan-300 font-semibold mb-6 text-xl" style={{ fontFamily: 'Orbitron' }}>
         {label}
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          type="text"
-          placeholder="Name"
-          className="glow-input"
-          value={member.name}
-          onChange={(e) => handleMemberChange(setter, 'name', e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Register Number"
-          className="glow-input"
-          value={member.regNo}
-          onChange={(e) => handleMemberChange(setter, 'regNo', e.target.value)}
-          required
-        />
-        <select
-          className="glow-input"
-          value={member.year}
-          onChange={(e) => handleMemberChange(setter, 'year', e.target.value)}
-          required
-        >
-          <option value="">Select Year</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Department"
-          className="glow-input"
-          value={member.dept}
-          onChange={(e) => handleMemberChange(setter, 'dept', e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Phone Number"
-          className="glow-input"
-          value={member.phone}
-          onChange={(e) => handleMemberChange(setter, 'phone', e.target.value)}
-          required
-        />
-        {/* Residence dropdown */}
-        <select
-          className="glow-input"
-          value={member.residenceType}
-          onChange={(e) => handleMemberChange(setter, 'residenceType', e.target.value)}
-        >
-          <option value="Day Scholar">Day Scholar</option>
-          <option value="Hosteller">Hosteller</option>
-        </select>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <label className="text-gray-400 text-sm">Full Name</label>
+          <input
+            type="text"
+            placeholder="Name"
+            className="glow-input"
+            value={member.name}
+            onChange={(e) => handleMemberChange(setter, 'name', e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-gray-400 text-sm">Register Number</label>
+          <input
+            type="text"
+            placeholder="Register Number"
+            className="glow-input"
+            value={member.regNo}
+            onChange={(e) => handleMemberChange(setter, 'regNo', e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="col-span-1 md:col-span-2 space-y-4">
+          <label className="text-gray-400 text-sm">Year of Study</label>
+          <select
+            className="glow-input h-14 text-lg"
+            value={member.year}
+            onChange={(e) => handleMemberChange(setter, 'year', e.target.value)}
+            required
+          >
+            <option value="">Select Year</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-gray-400 text-sm">Department</label>
+          <input
+            type="text"
+            placeholder="Department (e.g. CSE)"
+            className="glow-input"
+            value={member.dept}
+            onChange={(e) => handleMemberChange(setter, 'dept', e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-gray-400 text-sm">Phone Number</label>
+          <input
+            type="text"
+            placeholder="Phone Number"
+            className="glow-input"
+            value={member.phone}
+            onChange={(e) => handleMemberChange(setter, 'phone', e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="col-span-1 md:col-span-2 space-y-4">
+          <label className="text-cyan-300 font-semibold block mb-2">Residence Type</label>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {['Day Scholar', 'Hosteller'].map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => handleMemberChange(setter, 'residenceType', type)}
+                className={`glow-btn flex-1 py-4 ${member.residenceType === type ? 'bg-cyan-600/40 border-cyan-400 shadow-[0_0_15px_rgba(0,212,255,0.5)]' : 'opacity-60 hover:opacity-100'}`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {member.residenceType === 'Hosteller' && (
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="mt-4 sub-card"
+          transition={{ duration: 0.3 }}
+          className="mt-6 pt-6 border-t border-cyan-500/30"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <select
-              className="glow-input"
-              value={member.hostelName}
-              onChange={(e) => handleMemberChange(setter, 'hostelName', e.target.value)}
-              required
-            >
-              <option value="">Select Hostel</option>
-              {['MH-1', 'MH-2', 'MH-3', 'MH-6', 'PG', 'LH-1', 'LH-2', 'LH-3', 'LH-4'].map((h) => (
-                <option key={h} value={h}>{h}</option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Room Number"
-              className="glow-input"
-              value={member.roomNumber}
-              onChange={(e) => handleMemberChange(setter, 'roomNumber', e.target.value)}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Warden Name"
-              className="glow-input"
-              value={member.wardenName}
-              onChange={(e) => handleMemberChange(setter, 'wardenName', e.target.value)}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Warden Phone Number"
-              className="glow-input"
-              value={member.wardenPhone}
-              onChange={(e) => handleMemberChange(setter, 'wardenPhone', e.target.value)}
-              required
-            />
+          <h4 className="text-cyan-200 mb-4 font-mono">Hostel Details</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-gray-400 text-sm">Select Hostel</label>
+              <select
+                className="glow-input h-14 text-lg" // Made larger
+                value={member.hostelName}
+                onChange={(e) => handleMemberChange(setter, 'hostelName', e.target.value)}
+                required
+              >
+                <option value="">Choose Hostel...</option>
+                {['MH-1', 'MH-2', 'MH-3', 'MH-6', 'PG', 'LH-1', 'LH-2', 'LH-3', 'LH-4'].map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-gray-400 text-sm">Room Number</label>
+              <input
+                type="text"
+                placeholder="Room Number"
+                className="glow-input h-14"
+                value={member.roomNumber}
+                onChange={(e) => handleMemberChange(setter, 'roomNumber', e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-gray-400 text-sm">Warden Name</label>
+              <input
+                type="text"
+                placeholder="Warden Name"
+                className="glow-input h-14"
+                value={member.wardenName}
+                onChange={(e) => handleMemberChange(setter, 'wardenName', e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-gray-400 text-sm">Warden Phone</label>
+              <input
+                type="text"
+                placeholder="Warden Phone Number"
+                className="glow-input h-14"
+                value={member.wardenPhone}
+                onChange={(e) => handleMemberChange(setter, 'wardenPhone', e.target.value)}
+                required
+              />
+            </div>
           </div>
         </motion.div>
       )}
@@ -758,9 +807,9 @@ const RegistrationForm = () => {
         transition={{ duration: 0.5 }}
         className="glass-card w-full max-w-4xl"
       >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="title-glow text-3xl">Team Registration</h2>
-          <button onClick={handleLogout} className="glow-btn text-sm px-4 py-2">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <h2 className="title-glow text-3xl text-center md:text-left">Team Registration</h2>
+          <button onClick={handleLogout} className="glow-btn text-sm px-4 py-2 w-full md:w-auto">
             Logout
           </button>
         </div>
@@ -907,7 +956,49 @@ const RegistrationForm = () => {
           )}
         </form>
       </motion.div>
-    </div>
+
+      {/* Warning Popup */}
+      <AnimatePresence>
+        {showWarning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 backdrop-blur-md p-4"
+          >
+            <div className="border-2 border-red-500 bg-black p-8 max-w-lg w-full text-center relative overflow-hidden shadow-[0_0_50px_rgba(255,0,0,0.5)]">
+              <div className="absolute inset-0 bg-red-500/10 animate-pulse"></div>
+              <div className="relative z-10">
+                <h2 className="text-4xl font-black text-red-500 mb-6 tracking-widest" style={{ fontFamily: 'Orbitron' }}>
+                  WARNING
+                </h2>
+                <p className="text-lg text-gray-300 mb-8 font-mono leading-relaxed">
+                  PAYMENT VERIFICATION FAILED.
+                  <br /><br />
+                  Screenshot evidence is required to authorize this transaction. Please upload the payment screenshot to proceed.
+                </p>
+                <button
+                  onClick={() => {
+                    playSfx('click');
+                    setShowWarning(false);
+                  }}
+                  className="glow-btn border-red-500 text-red-500 hover:bg-red-900/20 w-full py-4 text-xl"
+                >
+                  ACKNOWLEDGE
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Footer */}
+      <div className="absolute bottom-2 text-center w-full z-10 opacity-70">
+        <p className="text-[10px] md:text-xs text-cyan-500/60 font-mono">
+          &copy; 2026 ACM KARE | Represented by Shaik Thahah. All rights reserved.
+        </p>
+      </div>
+    </div >
   );
 };
 
