@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase.ts';
 import { useNavigate } from 'react-router-dom';
+import paymentDetailsImage from '../payment_details.jpg';
 
 // Placeholder for the Bumblebee GIF. 
 // User should replace this with a local asset or a valid URL.
@@ -28,7 +29,7 @@ interface Member {
 const RegistrationForm = () => {
   const navigate = useNavigate();
   const [teamName, setTeamName] = useState('');
-  const [teamSize, setTeamSize] = useState<number>(4);
+  const [teamSize] = useState<number>(4);
   const [loading, setLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [transactionId, setTransactionId] = useState('');
@@ -141,19 +142,6 @@ const RegistrationForm = () => {
     wardenPhone: '',
   });
 
-  const [member4, setMember4] = useState<Member>({
-    name: '',
-    regNo: '',
-    year: '',
-    dept: '',
-    phone: '',
-    residenceType: 'Day Scholar',
-    hostelName: '',
-    roomNumber: '',
-    wardenName: '',
-    wardenPhone: '',
-  });
-
   const playSfx = (type: 'transform' | 'click') => {
     const sound = document.getElementById(`sfx-${type}`) as HTMLAudioElement;
     if (sound) {
@@ -224,9 +212,6 @@ const RegistrationForm = () => {
     }
 
     const members = [leader, member1, member2, member3];
-    if (teamSize === 5) {
-      members.push(member4);
-    }
 
     for (let i = 0; i < members.length; i++) {
       const member = members[i];
@@ -331,9 +316,6 @@ const RegistrationForm = () => {
 
     try {
       const members = [leader, member1, member2, member3];
-      if (teamSize === 5) {
-        members.push(member4);
-      }
 
       // Compress and convert image to Base64
       const compressImage = (file: File): Promise<string> => {
@@ -412,11 +394,9 @@ const RegistrationForm = () => {
         setMember1(emptyMember);
         setMember2(emptyMember);
         setMember3(emptyMember);
-        setMember4(emptyMember);
         setShowPayment(false);
         setTransactionId('');
         setPaymentScreenshot(null);
-        setTeamSize(4);
       });
 
     } catch (error: any) {
@@ -829,34 +809,10 @@ const RegistrationForm = () => {
                   />
                 </div>
 
-                {/* Team Size Selection */}
-                <div className="mb-6">
-                  <label className="block text-cyan-300 mb-2 font-semibold" style={{ fontFamily: 'Orbitron' }}>
-                    Select Team Size
-                  </label>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setTeamSize(4)}
-                      className={`glow-btn flex-1 ${teamSize === 4 ? 'bg-cyan-600/40 border-cyan-400' : 'opacity-50'}`}
-                    >
-                      4 Members
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTeamSize(5)}
-                      className={`glow-btn flex-1 ${teamSize === 5 ? 'bg-cyan-600/40 border-cyan-400' : 'opacity-50'}`}
-                    >
-                      5 Members
-                    </button>
-                  </div>
-                </div>
-
                 {renderMemberFields(leader, setLeader, 'Team Leader')}
                 {renderMemberFields(member1, setMember1, 'Member 1')}
                 {renderMemberFields(member2, setMember2, 'Member 2')}
                 {renderMemberFields(member3, setMember3, 'Member 3')}
-                {teamSize === 5 && renderMemberFields(member4, setMember4, 'Member 4')}
               </div>
 
               <button type="submit" className="glow-btn w-full mt-4" disabled={loading}>
@@ -880,28 +836,15 @@ const RegistrationForm = () => {
               </div>
 
               <div className="flex flex-col items-center justify-center mb-8">
-                <div className="bg-black/40 p-6 rounded-xl border border-cyan-500/30 w-full max-w-md">
-                  <h4 className="text-cyan-400 font-bold mb-4 text-lg border-b border-cyan-500/30 pb-2 text-center" style={{ fontFamily: 'Orbitron' }}>BANK TRANSFER DETAILS</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
-                      <span className="text-gray-400 text-sm">Bank Name</span>
-                      <span className="text-white font-mono font-bold text-right">Karur Vysya Bank</span>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
-                      <span className="text-gray-400 text-sm">Account Name</span>
-                      <span className="text-white font-mono font-bold text-right">170084 KARE ACM</span>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
-                      <span className="text-gray-400 text-sm">Account Number</span>
-                      <span className="text-white font-mono font-bold text-right tracking-wider">1818155000002703</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">IFSC Code</span>
-                      <span className="text-white font-mono font-bold text-right tracking-wider">KVBL0001818</span>
-                    </div>
-                  </div>
+                <div className="bg-black/40 p-4 rounded-xl border border-cyan-500/30 w-full max-w-md overflow-hidden">
+                  <h4 className="text-cyan-400 font-bold mb-4 text-lg border-b border-cyan-500/30 pb-2 text-center" style={{ fontFamily: 'Orbitron' }}>SCAN TO PAY</h4>
+                  <img
+                    src={paymentDetailsImage}
+                    alt="Payment Details"
+                    className="w-full h-auto rounded-lg shadow-[0_0_20px_rgba(0,212,255,0.3)] hover:scale-[1.02] transition-transform duration-300"
+                  />
                 </div>
-                <p className="text-cyan-200 text-sm mt-4">Please transfer the amount to the above account</p>
+                <p className="text-cyan-200 text-sm mt-4">Scan the QR code or use the details above to pay</p>
               </div>
 
               <div className="sub-card space-y-4">
