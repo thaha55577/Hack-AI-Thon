@@ -38,6 +38,7 @@ const RegistrationForm = () => {
   const [isTransforming, setIsTransforming] = useState(false);
   // New state for Screenshot Warning
   const [showWarning, setShowWarning] = useState(false);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
 
   // New states for Rules and Registration Check
   const [showRules, setShowRules] = useState(true);
@@ -292,6 +293,13 @@ const RegistrationForm = () => {
       }
 
       setPaymentScreenshot(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -306,7 +314,6 @@ const RegistrationForm = () => {
       return;
     }
 
-    // Modified Logic: Show Warning Popup instead of Toast
     if (!paymentScreenshot) {
       setShowWarning(true);
       return;
@@ -317,7 +324,7 @@ const RegistrationForm = () => {
     try {
       const members = [leader, member1, member2, member3];
 
-      // Compress and convert image to Base64
+      // Improved Compression logic
       const compressImage = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -327,34 +334,51 @@ const RegistrationForm = () => {
             img.src = event.target?.result as string;
             img.onload = () => {
               const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 800; // Resize to reasonable width
-              const scaleSize = MAX_WIDTH / img.width;
-              canvas.width = MAX_WIDTH;
-              canvas.height = img.height * scaleSize;
+              let width = img.width;
+              let height = img.height;
+
+              const MAX_DIMENSION = 1200;
+              if (width > height) {
+                if (width > MAX_DIMENSION) {
+                  height *= MAX_DIMENSION / width;
+                  width = MAX_DIMENSION;
+                }
+              } else {
+                if (height > MAX_DIMENSION) {
+                  width *= MAX_DIMENSION / height;
+                  height = MAX_DIMENSION;
+                }
+              }
+
+              canvas.width = width;
+              canvas.height = height;
 
               const ctx = canvas.getContext('2d');
-              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+              if (!ctx) {
+                reject(new Error("Could not get canvas context"));
+                return;
+              }
 
-              // Compress to JPEG with 0.6 quality
-              const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+              ctx.drawImage(img, 0, 0, width, height);
+
+              // Use lower quality for RTDB storage (0.4 is usually enough for proof)
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
               resolve(dataUrl);
             };
-            img.onerror = (err) => reject(err);
+            img.onerror = () => reject(new Error("Failed to load image into memory"));
           };
-          reader.onerror = (err) => reject(err);
+          reader.onerror = () => reject(new Error("Failed to read file"));
         });
       };
 
       let screenshotBase64 = '';
-      if (paymentScreenshot) {
-        try {
-          screenshotBase64 = await compressImage(paymentScreenshot);
-        } catch (err) {
-          console.error("Image compression failed", err);
-          toast.error("Failed to process image");
-          setLoading(false);
-          return;
-        }
+      try {
+        screenshotBase64 = await compressImage(paymentScreenshot);
+      } catch (err: any) {
+        console.error("Image compression failed:", err);
+        toast.error(`Image processing failed: ${err.message || 'Unknown error'}`);
+        setLoading(false);
+        return;
       }
 
       const payload: any = {
@@ -363,33 +387,44 @@ const RegistrationForm = () => {
         payment: {
           amount: teamSize * 200,
           transactionId: transactionId,
-          screenshotUrl: screenshotBase64, // Storing Base64 string directly
+          screenshotUrl: screenshotBase64,
           timestamp: new Date().toISOString(),
         }
       };
 
+      // Check payload size roughly
+      const payloadSize = JSON.stringify(payload).length;
+      if (payloadSize > 8 * 1024 * 1024) { // 8MB safety limit for RTDB
+        toast.error("Image is too large even after compression. Please try a different screenshot.");
+        setLoading(true);
+        // Try even more aggressive compression if first one fails size check
+        const dataUrlAggressive = await new Promise<string>((res) => {
+          const img = new Image();
+          img.src = screenshotBase64;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width * 0.5;
+            canvas.height = img.height * 0.5;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+            res(canvas.toDataURL('image/jpeg', 0.3));
+          };
+        });
+        payload.payment.screenshotUrl = dataUrlAggressive;
+      }
+
       await set(dbRef(db, 'teams/' + teamName), payload);
 
-      // Trigger transformation before success message and reset
       triggerTransformation(() => {
         toast.success('Team Registered Successfully!');
         setHasRegistered(true);
 
-        // Reset Form
         setTeamName('');
         const emptyMember: Member = {
-          name: '',
-          regNo: '',
-          year: '',
-          dept: '',
-          phone: '',
-          residenceType: 'Day Scholar',
-          hostelName: '',
-          roomNumber: '',
-          wardenName: '',
-          wardenPhone: '',
+          name: '', regNo: '', year: '', dept: '', phone: '',
+          residenceType: 'Day Scholar', hostelName: '', roomNumber: '',
+          wardenName: '', wardenPhone: '',
         };
-
         setLeader(emptyMember);
         setMember1(emptyMember);
         setMember2(emptyMember);
@@ -397,18 +432,15 @@ const RegistrationForm = () => {
         setShowPayment(false);
         setTransactionId('');
         setPaymentScreenshot(null);
+        setScreenshotPreview(null);
       });
 
     } catch (error: any) {
       console.error("Registration Error:", error);
-      if (error.code === 'storage/unauthorized') {
-        toast.error('Permission denied: Unable to upload screenshot. Please check your internet or contact admin.');
-      } else if (error.code === 'storage/canceled') {
-        toast.error('Upload canceled');
-      } else if (error.code === 'storage/unknown') {
-        toast.error('Unknown error occurred during upload');
+      if (error.message?.includes('PERMISSION_DENIED')) {
+        toast.error('Permission denied: You might already be registered or database is locked.');
       } else {
-        toast.error(`Registration failed: ${error.message}`);
+        toast.error(`Registration failed: ${error.message || 'Please check your connection'}`);
       }
     } finally {
       setLoading(false);
@@ -843,8 +875,37 @@ const RegistrationForm = () => {
                     alt="Payment Details"
                     className="w-full h-auto rounded-lg shadow-[0_0_20px_rgba(0,212,255,0.3)] hover:scale-[1.02] transition-transform duration-300"
                   />
+
+                  {/* Bank Details Section */}
+                  <div className="mt-6 p-4 bg-cyan-950/20 rounded-lg border border-cyan-500/20">
+                    <p className="text-yellow-400 text-center text-xs font-bold mb-4 uppercase tracking-wider animate-pulse">
+                      u can do by the bank tranfer also
+                    </p>
+                    <div className="space-y-3 text-[13px]">
+                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-cyan-900/50 pb-2">
+                        <span className="text-gray-400">Account Name:</span>
+                        <span className="text-cyan-300 font-semibold">170084 KARE ACM</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-cyan-900/50 pb-2">
+                        <span className="text-gray-400">Account Number:</span>
+                        <span className="text-cyan-300 font-semibold font-mono">1818155000002703</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-cyan-900/50 pb-2">
+                        <span className="text-gray-400">IFSC Code:</span>
+                        <span className="text-cyan-300 font-semibold font-mono uppercase">KVBL0001818</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:justify-between border-b border-cyan-900/50 pb-2">
+                        <span className="text-gray-400">Bank Name:</span>
+                        <span className="text-cyan-300 font-semibold">Karur Vysya Bank</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:justify-between">
+                        <span className="text-gray-400">Branch Name:</span>
+                        <span className="text-cyan-300 font-semibold text-right">Kalasalingam University - EC</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-cyan-200 text-sm mt-4">Scan the QR code or use the details above to pay</p>
+                <p className="text-cyan-200 text-sm mt-4">Scan the QR code or use the bank details above to pay</p>
               </div>
 
               <div className="sub-card space-y-4">
@@ -876,6 +937,29 @@ const RegistrationForm = () => {
                         cursor-pointer border border-cyan-500/30 rounded-lg p-2 bg-black/40"
                     />
                   </div>
+                  {screenshotPreview && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-4 relative inline-block group"
+                    >
+                      <img
+                        src={screenshotPreview}
+                        alt="Preview"
+                        className="w-32 h-32 object-cover rounded-lg border-2 border-cyan-500/50 shadow-[0_0_15px_rgba(0,212,255,0.3)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentScreenshot(null);
+                          setScreenshotPreview(null);
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700 transition-colors shadow-lg"
+                      >
+                        ✕
+                      </button>
+                    </motion.div>
+                  )}
                 </div>
               </div>
 
