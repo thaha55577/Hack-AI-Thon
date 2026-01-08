@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, adminOnly }: ProtectedRouteProps) => {
     return <Navigate to="/login" />;
   }
 
-  const isAdmin = currentUser.email === '99230040469@klu.ac.in';
+  const isAdmin = currentUser.email === '99230040469@klu.ac.in' || currentUser.email === '99220041803@gmail.com';
 
   if (adminOnly && !isAdmin) {
     return <Navigate to="/register" />;

@@ -27,6 +27,7 @@ const Login = () => {
 
   const validateEmail = (email: string) => {
     if (email === '99230040469') return true;
+    if (email === '99220041803@gmail.com') return true;
     const regex = /@klu\.ac\.in$/;
     return regex.test(email);
   };
@@ -95,7 +96,7 @@ const Login = () => {
       toast.success('Login successful!');
       playSfx('transform');
 
-      if (userCredential.user.email === '99230040469@klu.ac.in') {
+      if (userCredential.user.email === '99230040469@klu.ac.in' || userCredential.user.email === '99220041803@gmail.com') {
         navigate('/admin');
       } else {
         navigate('/register');
@@ -222,7 +223,7 @@ const Login = () => {
                 toast.success('Login successful!');
                 playSfx('transform');
 
-                if (email === '99230040469@klu.ac.in') {
+                if (email === '99230040469@klu.ac.in' || email === '99220041803@gmail.com') {
                   navigate('/admin');
                 } else {
                   navigate('/register');

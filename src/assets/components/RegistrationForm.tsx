@@ -75,7 +75,7 @@ const RegistrationForm = () => {
           }
         }
 
-        if (userEmail === '99230040469@klu.ac.in') {
+        if (userEmail === '99230040469@klu.ac.in' || userEmail === '99220041803@gmail.com') {
           setIsAdmin(true);
         }
       } catch (error) {
@@ -502,14 +502,16 @@ const RegistrationForm = () => {
 
         <div className="space-y-4">
           <label className="text-gray-400 text-sm">Department</label>
-          <input
-            type="text"
-            placeholder="Department (e.g. CSE)"
-            className="glow-input"
+          <select
+            className="glow-input h-14 text-lg"
             value={member.dept}
             onChange={(e) => handleMemberChange(setter, 'dept', e.target.value)}
             required
-          />
+          >
+            <option value="">Select Department</option>
+            <option value="CSE">CSE</option>
+            <option value="IT">IT</option>
+          </select>
         </div>
 
         <div className="space-y-4">
@@ -670,7 +672,7 @@ const RegistrationForm = () => {
     );
   }
 
-  if (registrationCount >= 59 && !isAdmin) {
+  if (registrationCount >= 75 && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 relative">
         <div className="glass-card w-full max-w-2xl p-12 border border-red-500/50 text-center relative overflow-hidden">
@@ -683,14 +685,21 @@ const RegistrationForm = () => {
             </h2>
 
             <p className="text-xl text-gray-300 mb-8 font-mono leading-relaxed">
-              The maximum limit of 59 teams has been reached. We are no longer accepting new registrations through the portal.
+              The maximum limit of 75 teams has been reached. We are no longer accepting new registrations through the portal.
             </p>
 
-            <div className="p-6 bg-red-950/30 rounded-xl border border-red-500/30 mb-8">
-              <p className="text-red-300 font-semibold text-lg mb-2">Need Assistance?</p>
-              <p className="text-gray-400">
-                Please contact the event coordinator for more information or any special requests.
-              </p>
+            <div className="p-6 bg-red-950/30 rounded-xl border border-red-500/30 mb-8 text-left">
+              <p className="text-red-300 font-semibold text-lg mb-2 text-center">Need Assistance?</p>
+              <div className="space-y-2 font-mono text-sm">
+                <p className="text-gray-300 flex justify-between">
+                  <span>Coordinator:</span>
+                  <span className="text-cyan-400">Shaik Thaha</span>
+                </p>
+                <p className="text-gray-300 flex justify-between">
+                  <span>Phone:</span>
+                  <a href="tel:7893340788" className="text-cyan-400 hover:text-cyan-300 underline">7893340788</a>
+                </p>
+              </div>
             </div>
 
             <button onClick={handleLogout} className="glow-btn border-red-500 text-red-400 hover:bg-red-900/20 w-full max-w-xs mx-auto">
@@ -1022,7 +1031,7 @@ const RegistrationForm = () => {
       {/* Footer */}
       <div className="absolute bottom-2 text-center w-full z-10 opacity-70">
         <p className="text-[10px] md:text-xs text-cyan-500/60 font-mono">
-          &copy; 2026 ACM KARE | Represented by Shaik Thahah. All rights reserved.
+          &copy; 2026 ACM KARE | Event Coordinator: Shaik Thaha (7893340788). All rights reserved.
         </p>
       </div>
     </div >
